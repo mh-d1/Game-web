@@ -1,14 +1,20 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Sniper Game</title>
-  <link rel="stylesheet" href="style.css">
+    <title>Polyfield Web Complex</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<canvas id="game" width="900" height="500"></canvas>
-<div id="zoomLevel">Zoom: 1x</div>
+<div id="crosshair">+</div>
+<div id="ammoHUD">Ammo: <span id="ammo">30</span></div>
+<div id="hpHUD">HP: <span id="hp">100</span></div>
 
-<script src="script.js"></script>
+<div id="joystick"></div>
+<button id="fireBtn">FIRE</button>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r152/three.min.js"></script>
+<script src="game.js"></script>
+
 </body>
 </html>
