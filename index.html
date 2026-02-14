@@ -1,10 +1,17 @@
-<!-- index.html --><!DOCTYPE html><html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-    <title>Polyfield Web Complex</title>
-    <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<title>Mini Polyfield 3D</title>
+<link rel="stylesheet" href="style.css">
 </head>
-<body><div id="crosshair">+</div>
-<div id="ammoHUD">Ammo: <span id="ammo">30</span></div>
-<div id="hpHUD">HP: <span id="hp">100</span></div><div id="joystick"></div>
-<button id="fireBtn">FIRE</button><script src="https://unpkg.com/three@0.152.2/build/three.min.js"></script><script src="game.js"></script></body>
+<body>
+
+<button id="shootBtn">Shoot</button>
+
+<!-- Panggil Three.js dari CDN -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
+<!-- Panggil kode game JS -->
+<script src="script.js"></script>
+</body>
 </html>
