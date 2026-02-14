@@ -40,6 +40,7 @@ addObstacle(10, 10);
 addObstacle(-15, 5, 3, 4, 3);
 addObstacle(0, -20, 5, 5, 5);
 addObstacle(-25, -15, 4, 3, 2);
+addObstacle(20, -10, 3, 3, 3);
 
 // ===== Player =====
 const player = {
@@ -53,19 +54,30 @@ scene.add(player.object);
 camera.position.set(0, player.height, 0);
 camera.rotation.order = "YXZ";
 
+// ===== Senjata AWM =====
+const weaponGeo = new THREE.BoxGeometry(0.2, 0.2, 2); // barrel
+const weaponMat = new THREE.MeshStandardMaterial({ color: 0x333333 });
+const awm = new THREE.Mesh(weaponGeo, weaponMat);
+awm.position.set(0, -0.3, -1); // posisi relatif ke player
+player.object.add(awm);
+
 // ===== Controls =====
 const move = { forward: false, backward: false, left: false, right: false };
+let isZoom = false;
+
 window.addEventListener("keydown", (e) => {
   if (e.key === "w") move.forward = true;
   if (e.key === "s") move.backward = true;
   if (e.key === "a") move.left = true;
   if (e.key === "d") move.right = true;
+  if (e.key === "Shift") isZoom = true; // zoom sniper
 });
 window.addEventListener("keyup", (e) => {
   if (e.key === "w") move.forward = false;
   if (e.key === "s") move.backward = false;
   if (e.key === "a") move.left = false;
   if (e.key === "d") move.right = false;
+  if (e.key === "Shift") isZoom = false;
 });
 
 // ===== Touch Controls =====
@@ -102,7 +114,7 @@ function shoot() {
 }
 document.getElementById("shootBtn").addEventListener("click", shoot);
 
-// ===== Collision with obstacles =====
+// ===== Collision dengan obstacles =====
 function checkCollision(pos) {
   for (let obs of obstacles) {
     const dx = Math.abs(pos.x - obs.position.x);
@@ -137,12 +149,17 @@ function animate() {
     player.object.position.z = newZ;
   }
 
-  // Camera follows FPS
+  // Zoom sniper
+  camera.fov = isZoom ? 30 : 75;
+  camera.updateProjectionMatrix();
+
+  // Camera FPS
   camera.position.copy(player.object.position);
 
   // Move bullets
+  const bulletSpeed = 2; // AWM cepat
   bullets.forEach((b, i) => {
-    b.position.add(b.direction.clone().multiplyScalar(1));
+    b.position.add(b.direction.clone().multiplyScalar(bulletSpeed));
     // remove bullet if out of map
     if (Math.abs(b.position.x) > 50 || Math.abs(b.position.z) > 50) {
       scene.remove(b);
