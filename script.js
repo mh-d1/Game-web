@@ -1,107 +1,152 @@
-// ===== Setup =====
-let scene, camera, renderer;
-let player, bullets = [];
-let move = { forward: false, backward: false, left: false, right: false };
-let speed = 0.2;
+// ===== Scene, Camera, Renderer =====
+let scene = new THREE.Scene();
+scene.background = new THREE.Color(0x87ceeb); // Sky blue
 
-// Scene & Camera
-scene = new THREE.Scene();
-scene.background = new THREE.Color(0x87ceeb); // sky blue
-camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
-camera.position.set(0, 5, 10);
+let camera = new THREE.PerspectiveCamera(
+  75,
+  window.innerWidth / window.innerHeight,
+  0.1,
+  1000
+);
 
-// Renderer
-renderer = new THREE.WebGLRenderer({antialias: true});
+let renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-// Light
+// ===== Light =====
 const light = new THREE.DirectionalLight(0xffffff, 1);
-light.position.set(5, 10, 7.5);
+light.position.set(10, 20, 10);
 scene.add(light);
 
-// Map (ground)
-const groundGeo = new THREE.PlaneGeometry(50, 50);
-const groundMat = new THREE.MeshStandardMaterial({color: 0x228B22});
+// ===== Map =====
+const groundGeo = new THREE.PlaneGeometry(100, 100);
+const groundMat = new THREE.MeshStandardMaterial({ color: 0x228B22 });
 const ground = new THREE.Mesh(groundGeo, groundMat);
-ground.rotation.x = -Math.PI/2;
+ground.rotation.x = -Math.PI / 2;
 scene.add(ground);
 
-// Player
-const playerGeo = new THREE.BoxGeometry(1,1,1);
-const playerMat = new THREE.MeshStandardMaterial({color: 0x0000ff});
-player = new THREE.Mesh(playerGeo, playerMat);
-player.position.y = 0.5;
-scene.add(player);
+// ===== Obstacles =====
+const obstacles = [];
+function addObstacle(x, z, w = 2, h = 3, d = 2) {
+  const geo = new THREE.BoxGeometry(w, h, d);
+  const mat = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
+  const box = new THREE.Mesh(geo, mat);
+  box.position.set(x, h / 2, z);
+  scene.add(box);
+  obstacles.push(box);
+}
+// Tambahkan beberapa obstacles
+addObstacle(10, 10);
+addObstacle(-15, 5, 3, 4, 3);
+addObstacle(0, -20, 5, 5, 5);
+addObstacle(-25, -15, 4, 3, 2);
 
-// Bullets
-const bulletGeo = new THREE.SphereGeometry(0.1, 8, 8);
-const bulletMat = new THREE.MeshStandardMaterial({color: 0xffff00});
+// ===== Player =====
+const player = {
+  height: 2,
+  speed: 0.3,
+  turnSpeed: 0.002,
+  object: new THREE.Object3D(),
+};
+player.object.position.set(0, player.height, 0);
+scene.add(player.object);
+camera.position.set(0, player.height, 0);
+camera.rotation.order = "YXZ";
 
 // ===== Controls =====
-// Keyboard
-window.addEventListener('keydown', (e)=>{
-  if(e.key === 'w') move.forward = true;
-  if(e.key === 's') move.backward = true;
-  if(e.key === 'a') move.left = true;
-  if(e.key === 'd') move.right = true;
+const move = { forward: false, backward: false, left: false, right: false };
+window.addEventListener("keydown", (e) => {
+  if (e.key === "w") move.forward = true;
+  if (e.key === "s") move.backward = true;
+  if (e.key === "a") move.left = true;
+  if (e.key === "d") move.right = true;
 });
-window.addEventListener('keyup', (e)=>{
-  if(e.key === 'w') move.forward = false;
-  if(e.key === 's') move.backward = false;
-  if(e.key === 'a') move.left = false;
-  if(e.key === 'd') move.right = false;
+window.addEventListener("keyup", (e) => {
+  if (e.key === "w") move.forward = false;
+  if (e.key === "s") move.backward = false;
+  if (e.key === "a") move.left = false;
+  if (e.key === "d") move.right = false;
 });
 
-// Shoot
-function shoot() {
-  const bullet = new THREE.Mesh(bulletGeo, bulletMat);
-  bullet.position.copy(player.position);
-  bullet.direction = new THREE.Vector3(0,0,-1).applyEuler(player.rotation);
-  bullets.push(bullet);
-  scene.add(bullet);
-}
-document.getElementById('shootBtn').addEventListener('click', shoot);
-
-// Touch (mobile)
+// ===== Touch Controls =====
 let touchStartX, touchStartY;
-window.addEventListener('touchstart', (e)=>{
+window.addEventListener("touchstart", (e) => {
   touchStartX = e.touches[0].clientX;
   touchStartY = e.touches[0].clientY;
 });
-window.addEventListener('touchmove', (e)=>{
+window.addEventListener("touchmove", (e) => {
   const deltaX = e.touches[0].clientX - touchStartX;
-  player.rotation.y -= deltaX * 0.005; // Sensitivitas kamera
+  const deltaY = e.touches[0].clientY - touchStartY;
+
+  player.object.rotation.y -= deltaX * 0.005; // horizontal turn
+  camera.rotation.x -= deltaY * 0.005; // vertical look
+  camera.rotation.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, camera.rotation.x));
+
   touchStartX = e.touches[0].clientX;
+  touchStartY = e.touches[0].clientY;
 });
+
+// ===== Shooting =====
+const bullets = [];
+const bulletGeo = new THREE.SphereGeometry(0.1, 8, 8);
+const bulletMat = new THREE.MeshStandardMaterial({ color: 0xffff00 });
+
+function shoot() {
+  const bullet = new THREE.Mesh(bulletGeo, bulletMat);
+  bullet.position.copy(player.object.position);
+  const dir = new THREE.Vector3(0, 0, -1);
+  dir.applyEuler(player.object.rotation);
+  bullet.direction = dir;
+  bullets.push(bullet);
+  scene.add(bullet);
+}
+document.getElementById("shootBtn").addEventListener("click", shoot);
+
+// ===== Collision with obstacles =====
+function checkCollision(pos) {
+  for (let obs of obstacles) {
+    const dx = Math.abs(pos.x - obs.position.x);
+    const dz = Math.abs(pos.z - obs.position.z);
+    const distX = obs.geometry.parameters.width / 2 + 0.5;
+    const distZ = obs.geometry.parameters.depth / 2 + 0.5;
+    if (dx < distX && dz < distZ) {
+      return true;
+    }
+  }
+  return false;
+}
 
 // ===== Animate =====
 function animate() {
   requestAnimationFrame(animate);
 
-  // Move player
-  let dirX = 0, dirZ = 0;
-  if(move.forward) dirZ -= speed;
-  if(move.backward) dirZ += speed;
-  if(move.left) dirX -= speed;
-  if(move.right) dirX += speed;
+  // Player movement
+  let dx = 0,
+    dz = 0;
+  if (move.forward) dz -= player.speed;
+  if (move.backward) dz += player.speed;
+  if (move.left) dx -= player.speed;
+  if (move.right) dx += player.speed;
 
-  const angle = player.rotation.y;
-  player.position.x += dirX * Math.cos(angle) - dirZ * Math.sin(angle);
-  player.position.z += dirX * Math.sin(angle) + dirZ * Math.cos(angle);
+  const angle = player.object.rotation.y;
+  const newX = player.object.position.x + dx * Math.cos(angle) - dz * Math.sin(angle);
+  const newZ = player.object.position.z + dx * Math.sin(angle) + dz * Math.cos(angle);
 
-  // Camera follows
-  camera.position.x = player.position.x + 10 * Math.sin(player.rotation.y);
-  camera.position.z = player.position.z + 10 * Math.cos(player.rotation.y);
-  camera.position.y = player.position.y + 5;
-  camera.lookAt(player.position);
+  if (!checkCollision({ x: newX, z: newZ })) {
+    player.object.position.x = newX;
+    player.object.position.z = newZ;
+  }
+
+  // Camera follows FPS
+  camera.position.copy(player.object.position);
 
   // Move bullets
-  bullets.forEach((b,i)=>{
-    b.position.add(b.direction.clone().multiplyScalar(0.5));
-    if(Math.abs(b.position.x) > 50 || Math.abs(b.position.z) > 50) {
+  bullets.forEach((b, i) => {
+    b.position.add(b.direction.clone().multiplyScalar(1));
+    // remove bullet if out of map
+    if (Math.abs(b.position.x) > 50 || Math.abs(b.position.z) > 50) {
       scene.remove(b);
-      bullets.splice(i,1);
+      bullets.splice(i, 1);
     }
   });
 
@@ -110,8 +155,8 @@ function animate() {
 animate();
 
 // ===== Resize =====
-window.addEventListener('resize', ()=>{
-  camera.aspect = window.innerWidth/window.innerHeight;
+window.addEventListener("resize", () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
