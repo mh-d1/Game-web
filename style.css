@@ -1,21 +1,21 @@
-
-
-
-/* ==================== CSS FILE (style.css) ==================== */
 body {
-  margin: 0;
-  background: #111;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  overflow: hidden;
-  font-family: sans-serif;
-  color: white;
+    margin: 0;
+    overflow: hidden;
+    background: #222;
 }
+
 canvas {
-  background: #222;
-  border: 3px solid #555;
-  border-radius: 12px;
+    display: block;
+    margin: 0 auto;
+    cursor: none;     /* hide cursor untuk sniper */
+}
+
+#zoomLevel {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    color: white;
+    font-size: 20px;
+    font-family: Arial;
 }
 
