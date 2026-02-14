@@ -1,21 +1,48 @@
 body {
     margin: 0;
     overflow: hidden;
-    background: #222;
+    background: #000;
 }
 
-canvas {
-    display: block;
-    margin: 0 auto;
-    cursor: none;     /* hide cursor untuk sniper */
-}
-
-#zoomLevel {
+#crosshair {
     position: absolute;
-    top: 10px;
-    left: 10px;
+    top: 50%;
+    left: 50%;
+    font-size: 40px;
+    color: white;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+}
+
+#ammoHUD, #hpHUD {
+    position: absolute;
+    color: white;
+    font-size: 22px;
+    left: 20px;
+}
+
+#hpHUD { top: 20px; }
+#ammoHUD { top: 55px; }
+
+#fireBtn {
+    position: absolute;
+    bottom: 10%;
+    right: 10%;
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255,0,0,0.6);
     color: white;
     font-size: 20px;
-    font-family: Arial;
 }
 
+#joystick {
+    position: absolute;
+    bottom: 10%;
+    left: 10%;
+    width: 140px;
+    height: 140px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 50%;
+}
