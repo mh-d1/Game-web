@@ -1,48 +1,17 @@
-body {
-    margin: 0;
-    overflow: hidden;
-    background: #000;
-}
 
-#crosshair {
+body { margin: 0; overflow: hidden; }
+canvas { display: block; }
+
+/* Tombol shoot di pojok bawah */
+#shootBtn {
     position: absolute;
-    top: 50%;
-    left: 50%;
-    font-size: 40px;
+    bottom: 20px;
+    right: 20px;
+    padding: 15px 25px;
+    background: red;
     color: white;
-    transform: translate(-50%, -50%);
-    pointer-events: none;
-}
-
-#ammoHUD, #hpHUD {
-    position: absolute;
-    color: white;
-    font-size: 22px;
-    left: 20px;
-}
-
-#hpHUD { top: 20px; }
-#ammoHUD { top: 55px; }
-
-#fireBtn {
-    position: absolute;
-    bottom: 10%;
-    right: 10%;
-    width: 90px;
-    height: 90px;
-    border-radius: 50%;
+    font-weight: bold;
     border: none;
-    background: rgba(255,0,0,0.6);
-    color: white;
-    font-size: 20px;
-}
-
-#joystick {
-    position: absolute;
-    bottom: 10%;
-    left: 10%;
-    width: 140px;
-    height: 140px;
-    background: rgba(255,255,255,0.15);
-    border-radius: 50%;
+    border-radius: 10px;
+    opacity: 0.7;
 }
