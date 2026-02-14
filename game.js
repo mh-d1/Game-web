@@ -9,8 +9,9 @@ const camera = new THREE.PerspectiveCamera(
 );
 camera.position.set(0, 1.7, 5);
 
-const renderer = new THREE.WebGLRenderer();
+const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(window.devicePixelRatio);
 document.body.appendChild(renderer.domElement);
 
 // Resize
@@ -44,26 +45,43 @@ createWall(-5, -10);
 // =========================================
 // MUSUH
 // =========================================
-let enemyHP = 50;
+let enemyHP = 100;
 
-const enemyGeo = new THREE.BoxGeometry(1.5, 1.5, 1.5);
+const enemyGeo = new THREE.BoxGeometry(1.5, 2, 1.5);
 const enemyMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
 const enemy = new THREE.Mesh(enemyGeo, enemyMat);
-enemy.position.set(0, 1, -15);
+enemy.position.set(0, 1, -20);
 scene.add(enemy);
+
+let enemyDir = 1; // bergerak kiri kanan
+let enemyShootCooldown = 0;
+
+// =========================================
+// PLAYER VAR
+// =========================================
+let hp = 100;
+let ammo = 30;
+let reserveAmmo = 90;
+let isReloading = false;
+
+// HUD Update
+document.getElementById("ammo").textContent = ammo;
+document.getElementById("hp").textContent = hp;
 
 // =========================================
 // SHOOTING
 // =========================================
-let ammo = 30;
-document.getElementById("ammo").textContent = ammo;
-
 function shoot() {
-    if (ammo <= 0) return;
+    if (ammo <= 0 || isReloading) return;
 
     ammo--;
     document.getElementById("ammo").textContent = ammo;
 
+    // Recoil kecil
+    camera.rotation.x += (Math.random() - 0.5) * 0.01;
+    camera.rotation.y += (Math.random() - 0.5) * 0.01;
+
+    // Raycaster
     const raycaster = new THREE.Raycaster();
     raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
 
@@ -71,7 +89,9 @@ function shoot() {
 
     if (hit.length > 0) {
         enemyHP -= 20;
-        enemy.scale.y -= 0.1;
+
+        enemy.material.color.set(0xff4444);
+        setTimeout(() => enemy.material.color.set(0xff0000), 150);
 
         if (enemyHP <= 0) {
             scene.remove(enemy);
@@ -79,62 +99,96 @@ function shoot() {
     }
 }
 
+// Fire button mobile
+document.getElementById("fireBtn").addEventListener("click", shoot);
+
+// Pointer Lock (FPS mode)
 document.body.addEventListener("click", () => {
     document.body.requestPointerLock();
-    shoot();
 });
 
 // =========================================
-// MOVEMENT
+// RELOAD SYSTEM
+// =========================================
+function reload() {
+    if (isReloading) return;
+    if (ammo === 30 || reserveAmmo <= 0) return;
+
+    isReloading = true;
+
+    setTimeout(() => {
+        let needed = 30 - ammo;
+        let used = Math.min(needed, reserveAmmo);
+
+        ammo += used;
+        reserveAmmo -= used;
+
+        document.getElementById("ammo").textContent = ammo;
+        isReloading = false;
+    }, 1200); // waktu reload 1.2 detik
+}
+
+document.addEventListener("keydown", (e) => {
+    if (e.key === "r" || e.key === "R") reload();
+});
+
+// =========================================
+// MOVEMENT (WASD)
 // =========================================
 const keys = {};
+document.addEventListener("keydown", (e) => keys[e.key] = true);
+document.addEventListener("keyup", (e) => keys[e.key] = false);
 
-document.addEventListener("keydown", (e)=> keys[e.key] = true);
-document.addEventListener("keyup", (e)=> keys[e.key] = false);
+function movePlayer() {
+    let speed = 0.1;
 
-let velocity = new THREE.Vector3();
-
-function updateMovement(delta) {
-    let speed = 5;
-
-    if (keys["w"]) velocity.z = -speed;
-    if (keys["s"]) velocity.z = speed;
-    if (keys["a"]) velocity.x = -speed;
-    if (keys["d"]) velocity.x = speed;
-
-    camera.position.x += velocity.x * delta;
-    camera.position.z += velocity.z * delta;
-
-    velocity.set(0,0,0);
+    if (keys["w"]) camera.position.z -= Math.cos(camera.rotation.y) * speed;
+    if (keys["s"]) camera.position.z += Math.cos(camera.rotation.y) * speed;
+    if (keys["a"]) camera.position.x -= Math.cos(camera.rotation.y + Math.PI/2) * speed;
+    if (keys["d"]) camera.position.x += Math.cos(camera.rotation.y + Math.PI/2) * speed;
 }
 
 // =========================================
-// MOUSE LOOK
+// ENEMY AI
 // =========================================
-let yaw = 0;
-let pitch = 0;
+function enemyAI() {
+    if (!enemy.parent) return;
 
-document.addEventListener("mousemove", (e) => {
-    if (document.pointerLockElement) {
-        yaw -= e.movementX * 0.002;
-        pitch -= e.movementY * 0.002;
-        pitch = Math.max(-1.4, Math.min(1.4, pitch));
-        camera.rotation.set(pitch, yaw, 0);
+    // Gerak bolak balik
+    enemy.position.x += 0.05 * enemyDir;
+    if (enemy.position.x > 5) enemyDir = -1;
+    if (enemy.position.x < -5) enemyDir = 1;
+
+    // Musuh menembak jika dekat
+    let dist = enemy.position.distanceTo(camera.position);
+
+    if (dist < 15 && enemyShootCooldown <= 0) {
+        hp -= 10;
+        document.getElementById("hp").textContent = hp;
+
+        enemy.material.color.set(0xff8888);
+        setTimeout(() => enemy.material.color.set(0xff0000), 200);
+
+        enemyShootCooldown = 60; // cooldown 1 detik
     }
-});
+
+    if (enemyShootCooldown > 0) enemyShootCooldown--;
+
+    if (hp <= 0) {
+        alert("GAME OVER");
+        location.reload();
+    }
+}
 
 // =========================================
-// GAME LOOP
+// ANIMATION LOOP
 // =========================================
-let lastTime = 0;
+function animate() {
+    requestAnimationFrame(animate);
 
-function animate(time) {
-    let delta = (time - lastTime) / 1000;
-    lastTime = time;
-
-    updateMovement(delta);
+    movePlayer();
+    enemyAI();
 
     renderer.render(scene, camera);
-    requestAnimationFrame(animate);
 }
 animate();
