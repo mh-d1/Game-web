@@ -1,194 +1,117 @@
-// =========================================
-// SCENE, CAMERA, RENDERER
-// =========================================
+// ===== Setup =====
+let scene, camera, renderer;
+let player, bullets = [];
+let move = { forward: false, backward: false, left: false, right: false };
+let speed = 0.2;
 
-const scene = new THREE.Scene();
+// Scene & Camera
+scene = new THREE.Scene();
+scene.background = new THREE.Color(0x87ceeb); // sky blue
+camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+camera.position.set(0, 5, 10);
 
-const camera = new THREE.PerspectiveCamera(
-    75, window.innerWidth / window.innerHeight, 0.1, 1000
-);
-camera.position.set(0, 1.7, 5);
-
-const renderer = new THREE.WebGLRenderer({ antialias: true });
+// Renderer
+renderer = new THREE.WebGLRenderer({antialias: true});
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(window.devicePixelRatio);
 document.body.appendChild(renderer.domElement);
 
-// Resize
-window.addEventListener("resize", () => {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
+// Light
+const light = new THREE.DirectionalLight(0xffffff, 1);
+light.position.set(5, 10, 7.5);
+scene.add(light);
+
+// Map (ground)
+const groundGeo = new THREE.PlaneGeometry(50, 50);
+const groundMat = new THREE.MeshStandardMaterial({color: 0x228B22});
+const ground = new THREE.Mesh(groundGeo, groundMat);
+ground.rotation.x = -Math.PI/2;
+scene.add(ground);
+
+// Player
+const playerGeo = new THREE.BoxGeometry(1,1,1);
+const playerMat = new THREE.MeshStandardMaterial({color: 0x0000ff});
+player = new THREE.Mesh(playerGeo, playerMat);
+player.position.y = 0.5;
+scene.add(player);
+
+// Bullets
+const bulletGeo = new THREE.SphereGeometry(0.1, 8, 8);
+const bulletMat = new THREE.MeshStandardMaterial({color: 0xffff00});
+
+// ===== Controls =====
+// Keyboard
+window.addEventListener('keydown', (e)=>{
+  if(e.key === 'w') move.forward = true;
+  if(e.key === 's') move.backward = true;
+  if(e.key === 'a') move.left = true;
+  if(e.key === 'd') move.right = true;
+});
+window.addEventListener('keyup', (e)=>{
+  if(e.key === 'w') move.forward = false;
+  if(e.key === 's') move.backward = false;
+  if(e.key === 'a') move.left = false;
+  if(e.key === 'd') move.right = false;
 });
 
-// =========================================
-// FLOOR + MAP
-// =========================================
-const floorGeo = new THREE.PlaneGeometry(200, 200);
-const floorMat = new THREE.MeshBasicMaterial({ color: 0x555555 });
-const floor = new THREE.Mesh(floorGeo, floorMat);
-floor.rotation.x = -Math.PI / 2;
-scene.add(floor);
-
-// DINDING
-function createWall(x, z) {
-    let geo = new THREE.BoxGeometry(4, 4, 1);
-    let mat = new THREE.MeshBasicMaterial({ color: 0x222222 });
-    let wall = new THREE.Mesh(geo, mat);
-    wall.position.set(x, 2, z);
-    scene.add(wall);
-}
-createWall(0, -10);
-createWall(5, -10);
-createWall(-5, -10);
-
-// =========================================
-// MUSUH
-// =========================================
-let enemyHP = 100;
-
-const enemyGeo = new THREE.BoxGeometry(1.5, 2, 1.5);
-const enemyMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-const enemy = new THREE.Mesh(enemyGeo, enemyMat);
-enemy.position.set(0, 1, -20);
-scene.add(enemy);
-
-let enemyDir = 1; // bergerak kiri kanan
-let enemyShootCooldown = 0;
-
-// =========================================
-// PLAYER VAR
-// =========================================
-let hp = 100;
-let ammo = 30;
-let reserveAmmo = 90;
-let isReloading = false;
-
-// HUD Update
-document.getElementById("ammo").textContent = ammo;
-document.getElementById("hp").textContent = hp;
-
-// =========================================
-// SHOOTING
-// =========================================
+// Shoot
 function shoot() {
-    if (ammo <= 0 || isReloading) return;
-
-    ammo--;
-    document.getElementById("ammo").textContent = ammo;
-
-    // Recoil kecil
-    camera.rotation.x += (Math.random() - 0.5) * 0.01;
-    camera.rotation.y += (Math.random() - 0.5) * 0.01;
-
-    // Raycaster
-    const raycaster = new THREE.Raycaster();
-    raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
-
-    const hit = raycaster.intersectObject(enemy);
-
-    if (hit.length > 0) {
-        enemyHP -= 20;
-
-        enemy.material.color.set(0xff4444);
-        setTimeout(() => enemy.material.color.set(0xff0000), 150);
-
-        if (enemyHP <= 0) {
-            scene.remove(enemy);
-        }
-    }
+  const bullet = new THREE.Mesh(bulletGeo, bulletMat);
+  bullet.position.copy(player.position);
+  bullet.direction = new THREE.Vector3(0,0,-1).applyEuler(player.rotation);
+  bullets.push(bullet);
+  scene.add(bullet);
 }
+document.getElementById('shootBtn').addEventListener('click', shoot);
 
-// Fire button mobile
-document.getElementById("fireBtn").addEventListener("click", shoot);
-
-// Pointer Lock (FPS mode)
-document.body.addEventListener("click", () => {
-    document.body.requestPointerLock();
+// Touch (mobile)
+let touchStartX, touchStartY;
+window.addEventListener('touchstart', (e)=>{
+  touchStartX = e.touches[0].clientX;
+  touchStartY = e.touches[0].clientY;
+});
+window.addEventListener('touchmove', (e)=>{
+  const deltaX = e.touches[0].clientX - touchStartX;
+  player.rotation.y -= deltaX * 0.005; // Sensitivitas kamera
+  touchStartX = e.touches[0].clientX;
 });
 
-// =========================================
-// RELOAD SYSTEM
-// =========================================
-function reload() {
-    if (isReloading) return;
-    if (ammo === 30 || reserveAmmo <= 0) return;
-
-    isReloading = true;
-
-    setTimeout(() => {
-        let needed = 30 - ammo;
-        let used = Math.min(needed, reserveAmmo);
-
-        ammo += used;
-        reserveAmmo -= used;
-
-        document.getElementById("ammo").textContent = ammo;
-        isReloading = false;
-    }, 1200); // waktu reload 1.2 detik
-}
-
-document.addEventListener("keydown", (e) => {
-    if (e.key === "r" || e.key === "R") reload();
-});
-
-// =========================================
-// MOVEMENT (WASD)
-// =========================================
-const keys = {};
-document.addEventListener("keydown", (e) => keys[e.key] = true);
-document.addEventListener("keyup", (e) => keys[e.key] = false);
-
-function movePlayer() {
-    let speed = 0.1;
-
-    if (keys["w"]) camera.position.z -= Math.cos(camera.rotation.y) * speed;
-    if (keys["s"]) camera.position.z += Math.cos(camera.rotation.y) * speed;
-    if (keys["a"]) camera.position.x -= Math.cos(camera.rotation.y + Math.PI/2) * speed;
-    if (keys["d"]) camera.position.x += Math.cos(camera.rotation.y + Math.PI/2) * speed;
-}
-
-// =========================================
-// ENEMY AI
-// =========================================
-function enemyAI() {
-    if (!enemy.parent) return;
-
-    // Gerak bolak balik
-    enemy.position.x += 0.05 * enemyDir;
-    if (enemy.position.x > 5) enemyDir = -1;
-    if (enemy.position.x < -5) enemyDir = 1;
-
-    // Musuh menembak jika dekat
-    let dist = enemy.position.distanceTo(camera.position);
-
-    if (dist < 15 && enemyShootCooldown <= 0) {
-        hp -= 10;
-        document.getElementById("hp").textContent = hp;
-
-        enemy.material.color.set(0xff8888);
-        setTimeout(() => enemy.material.color.set(0xff0000), 200);
-
-        enemyShootCooldown = 60; // cooldown 1 detik
-    }
-
-    if (enemyShootCooldown > 0) enemyShootCooldown--;
-
-    if (hp <= 0) {
-        alert("GAME OVER");
-        location.reload();
-    }
-}
-
-// =========================================
-// ANIMATION LOOP
-// =========================================
+// ===== Animate =====
 function animate() {
-    requestAnimationFrame(animate);
+  requestAnimationFrame(animate);
 
-    movePlayer();
-    enemyAI();
+  // Move player
+  let dirX = 0, dirZ = 0;
+  if(move.forward) dirZ -= speed;
+  if(move.backward) dirZ += speed;
+  if(move.left) dirX -= speed;
+  if(move.right) dirX += speed;
 
-    renderer.render(scene, camera);
+  const angle = player.rotation.y;
+  player.position.x += dirX * Math.cos(angle) - dirZ * Math.sin(angle);
+  player.position.z += dirX * Math.sin(angle) + dirZ * Math.cos(angle);
+
+  // Camera follows
+  camera.position.x = player.position.x + 10 * Math.sin(player.rotation.y);
+  camera.position.z = player.position.z + 10 * Math.cos(player.rotation.y);
+  camera.position.y = player.position.y + 5;
+  camera.lookAt(player.position);
+
+  // Move bullets
+  bullets.forEach((b,i)=>{
+    b.position.add(b.direction.clone().multiplyScalar(0.5));
+    if(Math.abs(b.position.x) > 50 || Math.abs(b.position.z) > 50) {
+      scene.remove(b);
+      bullets.splice(i,1);
+    }
+  });
+
+  renderer.render(scene, camera);
 }
 animate();
+
+// ===== Resize =====
+window.addEventListener('resize', ()=>{
+  camera.aspect = window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
