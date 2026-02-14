@@ -7,9 +7,22 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<button id="shootBtn">Shoot</button>
 
-<!-- Three.js CDN -->
+<!-- Tombol HP (hanya tampil di mobile) -->
+<div id="mobileControls">
+  <button id="shootBtn">Shoot</button>
+  <button id="scopeBtn">Scope</button>
+  <button id="runBtn">Run</button>
+  <button id="jumpBtn">Jump</button>
+  <!-- Tombol arah sederhana -->
+  <div id="dpad">
+    <button class="dirBtn" data-dir="forward">↑</button>
+    <button class="dirBtn" data-dir="backward">↓</button>
+    <button class="dirBtn" data-dir="left">←</button>
+    <button class="dirBtn" data-dir="right">→</button>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
 <script src="script.js"></script>
 </body>
