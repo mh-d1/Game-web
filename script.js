@@ -7,20 +7,21 @@ const renderer = new THREE.WebGLRenderer({antialias:true});
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.outputEncoding = THREE.sRGBEncoding;
 renderer.toneMapping = THREE.NoToneMapping;
-renderer.shadowMap.enabled = false; // matikan shadow
+renderer.shadowMap.enabled = false;
 document.body.appendChild(renderer.domElement);
 
 // ===== Lights =====
-const ambient = new THREE.AmbientLight(0xffffff, 1.0); // terang full
+const ambient = new THREE.AmbientLight(0xffffff, 1.0);
 scene.add(ambient);
-
 const directional = new THREE.DirectionalLight(0xffffff, 0.7);
 directional.position.set(10, 20, 10);
 scene.add(directional);
 
 // ===== Ground =====
-const groundMat = new THREE.MeshPhongMaterial({ color: 0x556B2F });
-const ground = new THREE.Mesh(new THREE.PlaneGeometry(100,100), groundMat);
+const ground = new THREE.Mesh(
+  new THREE.PlaneGeometry(100,100),
+  new THREE.MeshPhongMaterial({ color: 0x556B2F })
+);
 ground.rotation.x = -Math.PI/2;
 scene.add(ground);
 
@@ -41,12 +42,12 @@ addObstacle(20,-10,3,3,3,0xA0522D);
 
 // ===== Player =====
 const player={height:2,speed:0.3,object:new THREE.Object3D()};
-player.object.position.set(0,player.height,10); // lihat map
+player.object.position.set(0,player.height+1,15); // kamera mundur & tinggi
 scene.add(player.object);
-camera.position.set(0,player.height,10);
+camera.position.set(0,player.height+1,15);
 camera.lookAt(0, player.height, 0);
 
-// ===== Pointer Lock Controls =====
+// ===== PointerLock Controls =====
 const controls = new THREE.PointerLockControls(camera, renderer.domElement);
 scene.add(controls.getObject());
 
@@ -95,7 +96,6 @@ function setupMobileControls(){
   const move = {forward:false,backward:false,left:false,right:false};
   let isZoom=false,isRunning=false,isJumping=false;
 
-  // tombol aksi
   document.getElementById("shootBtn").addEventListener("touchstart", shoot);
   document.getElementById("scopeBtn").addEventListener("touchstart",()=>{isZoom=true;});
   document.getElementById("scopeBtn").addEventListener("touchend",()=>{isZoom=false;});
@@ -142,14 +142,12 @@ function setupDesktopControls(){
 // ===== Animate =====
 function animateMobile(move,isZoom,isRunning,isJumping){
   requestAnimationFrame(()=>animateMobile(move,isZoom,isRunning,isJumping));
-
   updatePlayer(move,isZoom,isRunning,isJumping);
   renderer.render(scene,camera);
 }
 
 function animateDesktop(move,isZoom,isRunning,isJumping){
   requestAnimationFrame(()=>animateDesktop(move,isZoom,isRunning,isJumping));
-
   updatePlayer(move,isZoom,isRunning,isJumping);
   renderer.render(scene,camera);
 }
