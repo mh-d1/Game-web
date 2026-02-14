@@ -18,17 +18,9 @@ canvas { display: block; }
   font-size: 16px;
   pointer-events: auto;
 }
-
-/* Posisi tombol aksi */
 #shootBtn { bottom: 20px; right: 20px; background: darkred; }
 #scopeBtn { bottom: 100px; right: 20px; background: darkgreen; }
 #runBtn { bottom: 20px; left: 20px; background: darkblue; }
 #jumpBtn { bottom: 100px; left: 20px; background: orange; }
-
-/* D-pad arah */
 #dpad { position: absolute; bottom: 150px; left: 20px; width: 120px; height: 120px; }
-.dirBtn {
-  width: 40px; height: 40px; margin: 2px;
-  background: gray; color: white; font-weight: bold;
-  border-radius: 5px; border: none;
-}
+.dirBtn { width: 40px; height: 40px; margin: 2px; background: gray; color: white; font-weight: bold; border-radius: 5px; border: none; }
